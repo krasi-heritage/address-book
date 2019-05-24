@@ -36,6 +36,7 @@ build/Release
 # Dependency directories
 node_modules/
 config/dbConn.js
+config/config.js
 jspm_packages/
 
 
