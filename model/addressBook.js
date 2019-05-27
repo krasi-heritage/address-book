@@ -4,62 +4,75 @@ module.exports = class {
 	static async getAddresses() {
 		let connection = await db.getConnection();
 		const rows = await connection.query(
-			"SELECT * FROM `person` JOIN address ON `person`.`addressId` = `address`.`addressId`"
+			"SELECT * FROM `person` JOIN `address` ON `person`.`addressId` = `address`.`addressId`"
 		);
 		connection.end();
 		return rows;
 	}
 
-	static async daleteAddress(personId) {
+	static async viewAddress(personId) {
 		let conn = await db.getConnection();
-
 		const rows = await conn.query(
-			"SELECT `addressId` FROM `person` WHERE `personId`= ?",
+			"SELECT * FROM `person` JOIN `address` ON `person`.`addressId` = `address`.`addressId` WHERE `personId` = ?",
 			[personId]
 		);
 
-		if (rows.lenght === 1) {
+		if (rows.length === 1) {
+			conn.end();
+			return rows[0];
+		}
+
+		conn.end();
+		return {};
+	}
+
+	static async deleteAddress(personId) {
+		let conn = await db.getConnection();
+		const rows = await conn.query(
+			"SELECT `addressId` FROM `person` WHERE personId = ?",
+			[personId]
+		);
+
+		if (rows.length === 1) {
 			const addressId = rows[0].addressId;
-			conn.query("DELETE FROM `address` WHERE `address`.`addressId` = ?", [
-				addressId
-			]);
 			conn.query("DELETE FROM `person` WHERE `person`.`personId` = ?", [
 				personId
 			]);
+
+			conn.query("DELETE FROM `address` WHERE `address`.`addressId` = ?", [
+				addressId
+			]);
+
 			conn.end();
-			return { deleted: {} };
+			return { deleted: { personId: personId, addressId: addressId } };
 		}
+
+		conn.end();
+		return { deleted: {} };
 	}
 
-	static async addAddress(person, address) {
-		console.log(address);
-		let connection = await db.getConnection();
+	static async addAddress(p, a) {
+		let conn = await db.getConnection();
 
-		const addAddressResults = await connection.query(
-			"INSERT INTO `address` (`street`, `city`, `province`, `country`, `postal`, `latlng`) VALUES ( ?, ?, ?, ?, ? PoinFromText('POINT(" +
-				address.geometry.lat +
+		const addAddressResult = await conn.query(
+			"INSERT INTO `address` (`street`, `city`, `province`, `country`, `postal`,`latlng`) VALUES (?, ?, ?, ?, ?, PointFromText('POINT(" +
+				a.geometry.lat +
 				" " +
-				address.geometry.lng +
-				")'));",
-			[
-				address.street,
-				address.city,
-				address.province,
-				address.country,
-				address.postal
-			]
+				a.geometry.lng +
+				")'))",
+			[a.street, a.city, a.province, a.country, a.postal]
 		);
 
-		const addressId = addAddressResults.insertId;
+		const addressId = addAddressResult.insertId;
 
-		const addPersonResults = await connection.query(
-			"INSERT INTO `person` (`first`, `last`, `phone`, `addressId`) VALUES ( ?, ?, ?, ?);",
-			[person.first, person.last, person.phone, person.addressId]
+		const addPersonResult = await conn.query(
+			"INSERT INTO `person` (`first`, `last`, `phone`, `addressId`) VALUES (?, ?, ?, ?)",
+			[p.first, p.last, p.phone, addressId]
 		);
 
-		const personId = addPersonResults.insertId;
+		const personId = addPersonResult.insertId;
 
-		connection.end();
+		conn.end();
 
 		return { addressId: addressId, personId: personId };
 	}

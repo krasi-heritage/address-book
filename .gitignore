@@ -5,7 +5,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-
 # Runtime data
 pids
 *.pid
@@ -38,7 +37,6 @@ node_modules/
 config/dbConn.js
 config/config.js
 jspm_packages/
-
 
 # TypeScript v1 declaration files
 typings/
